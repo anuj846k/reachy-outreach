@@ -1,15 +1,22 @@
 import { inngest } from './client';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { generateText } from 'ai';
 
-export const processTask = inngest.createFunction(
+const google = createGoogleGenerativeAI();
+
+export const executeAI = inngest.createFunction(
   {
-    id: 'process-task',
-    triggers: { event: 'app/task-created' },
+    id: 'execute-ai',
+    triggers: { event: 'execute/ai' },
   },
   async ({ event, step }) => {
-    const result = await step.run('handle-task', async () => {
-      return { processed: true, id: event.data.id };
+    console.log('Received event:', event);
+    const { steps } = await step.ai.wrap('google-generate-text', generateText, {
+      system: 'You are a helpful assistant  that provides concise answers.',
+      model: google('gemini-2.5-flash'),
+      prompt: "write something on the topic of 'AI in 2028'",
     });
-    await step.sleep('pause', '1s');
-    return { message: `Task ${result.id} processed!`, result };
+
+    return steps;
   },
 );
