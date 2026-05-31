@@ -145,12 +145,12 @@ export function AppSidebar({ user }: AppSidebarProps) {
                   size='lg'
                   className='w-full cursor-pointer hover:bg-sidebar-accent/65 active:bg-sidebar-accent/80 transition-all duration-200 border border-transparent hover:border-sidebar-border/30 rounded-xl px-2'
                 >
-                  <Avatar className='h-8 w-8 rounded-xl border border-primary/20 shadow-2xs shrink-0'>
+                  <Avatar className='h-8 w-8 border border-primary/20 shadow-2xs shrink-0'>
                     <AvatarImage
                       src={user?.image || ''}
                       alt={user?.name || ''}
                     />
-                    <AvatarFallback className='rounded-xl bg-gradient-to-tr from-primary/20 to-primary/5 text-primary font-bold text-xs'>
+                    <AvatarFallback className=' bg-gradient-to-tr from-primary/20 to-primary/5 text-primary font-bold text-xs'>
                       {user?.name?.slice(0, 2).toUpperCase() || 'US'}
                     </AvatarFallback>
                   </Avatar>
@@ -171,12 +171,12 @@ export function AppSidebar({ user }: AppSidebarProps) {
                 align='start'
               >
                 <div className='flex items-center gap-2.5 p-2 rounded-lg bg-sidebar-accent/40 mb-1 border border-sidebar-border/20'>
-                  <Avatar className='h-9 w-9 rounded-lg border border-primary/20'>
+                  <Avatar className='h-9 w-9  border border-primary/20'>
                     <AvatarImage
                       src={user?.image || ''}
                       alt={user?.name || ''}
                     />
-                    <AvatarFallback className='rounded-lg bg-primary/10 text-primary font-bold text-sm'>
+                    <AvatarFallback className=' bg-primary/10 text-primary font-bold text-sm'>
                       {user?.name?.slice(0, 2).toUpperCase() || 'US'}
                     </AvatarFallback>
                   </Avatar>

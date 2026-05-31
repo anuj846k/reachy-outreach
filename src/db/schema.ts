@@ -25,6 +25,12 @@ export const extractionStatusEnum = pgEnum('extraction_status', [
   'failed',
 ]);
 
+export const outreachStatusEnum = pgEnum('outreach_status', [
+  'draft',
+  'sent',
+  'archived',
+]);
+
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
@@ -205,3 +211,46 @@ export const prospectRelations = relations(prospects, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+export const outreachMessages = pgTable('outreach_messages', {
+  id: uuid('id').defaultRandom().primaryKey(),
+
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+
+  offeringId: uuid('offering_id').references(() => offerings.id),
+  prospectId: uuid('prospect_id').references(() => prospects.id),
+
+  subjectLine: text('subject_line'),
+  content: text('content').notNull(),
+  tone: text('tone').default('professional'),
+  customContext: text('custom_context'),
+
+  status: outreachStatusEnum('status').notNull().default('draft'),
+
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+
+  updatedAt: timestamp('updated_at')
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+export const outreachMessageRelations = relations(
+  outreachMessages,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [outreachMessages.userId],
+      references: [user.id],
+    }),
+    offering: one(offerings, {
+      fields: [outreachMessages.offeringId],
+      references: [offerings.id],
+    }),
+    prospect: one(prospects, {
+      fields: [outreachMessages.prospectId],
+      references: [prospects.id],
+    }),
+  }),
+);

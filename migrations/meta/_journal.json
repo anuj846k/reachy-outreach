@@ -29,6 +29,13 @@
       "when": 1780227011329,
       "tag": "0003_clean_prowler",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1780230534596,
+      "tag": "0004_flowery_maggott",
+      "breakpoints": true
     }
   ]
 }
