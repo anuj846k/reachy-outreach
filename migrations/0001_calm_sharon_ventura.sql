@@ -1,0 +1,1 @@
+ALTER TABLE "offerings" ADD COLUMN "raw_extracted_data" text;

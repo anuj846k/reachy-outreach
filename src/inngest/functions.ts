@@ -78,7 +78,7 @@ export const extractOffering = inngest.createFunction(
         customerProblems: string | null;
         keyDifferentiators: string | null;
         proofPoints: string | null;
-        extractedMarkdown: string | null;
+        rawExtractedData: string | null;
         metadata: Record<string, unknown>;
       };
 
@@ -106,7 +106,7 @@ export const extractOffering = inngest.createFunction(
 
         extractedData = {
           ...extracted,
-          extractedMarkdown: JSON.stringify(linkedinData, null, 2),
+          rawExtractedData: JSON.stringify(linkedinData, null, 2),
           metadata: {
             pageTitle: (linkedinData.name as string) || null,
             pageDescription: (linkedinData.tagline as string) || null,
@@ -146,7 +146,7 @@ export const extractOffering = inngest.createFunction(
           customerProblems: extracted?.customerProblems || null,
           keyDifferentiators: extracted?.keyDifferentiators || null,
           proofPoints: extracted?.proofPoints || null,
-          extractedMarkdown: result.markdown || null,
+          rawExtractedData: result.markdown || null,
           metadata: {
             pageTitle: (meta?.title as string) || null,
             pageDescription: (meta?.description as string) || null,
@@ -164,7 +164,7 @@ export const extractOffering = inngest.createFunction(
           customerProblems: extractedData.customerProblems,
           keyDifferentiators: extractedData.keyDifferentiators,
           proofPoints: extractedData.proofPoints,
-          extractedMarkdown: extractedData.extractedMarkdown,
+          rawExtractedData: extractedData.rawExtractedData,
           extractionStatus: 'completed',
           metadata: extractedData.metadata,
         })
