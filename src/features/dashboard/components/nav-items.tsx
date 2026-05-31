@@ -2,7 +2,7 @@ import {
   LayoutDashboard,
   Briefcase,
   Users,
-  MessageSquare,
+  Mail,
   BarChart3,
 } from 'lucide-react';
 
@@ -23,9 +23,9 @@ export const navItems = [
     icon: Users,
   },
   {
-    title: 'Messages',
-    url: '/dashboard/messages',
-    icon: MessageSquare,
+    title: 'Outreach',
+    url: '/dashboard/outreach',
+    icon: Mail,
   },
   {
     title: 'Analytics',
