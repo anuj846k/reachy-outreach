@@ -57,7 +57,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
                 <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/15 shadow-2xs group-hover/logo:scale-105 transition-all duration-300'>
                   <Image
                     src='/logos/logo.svg'
-                    alt='Outreachyy'
+                    alt='Reachy'
                     className='h-5 w-5 transition-transform duration-500 group-hover/logo:rotate-6'
                     height={40}
                     width={40}
@@ -65,7 +65,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
                 </div>
                 <div className='flex flex-col gap-0.5'>
                   <span className='font-bold text-sm tracking-tight text-sidebar-foreground group-hover/logo:text-primary transition-colors duration-200'>
-                    Outreachyy
+                    Reachy
                   </span>
                   <span className='text-[10px] text-sidebar-foreground/50 font-medium tracking-wide uppercase leading-none'>
                     Pro

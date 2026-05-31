@@ -15,9 +15,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Outreachyy',
+  title: 'Reachy',
   description: 'Personalized Outreach Dashboard',
+  icons: {
+    icon: '/logos/logo.svg'
+  }
 };
+
+
 
 export default function RootLayout({
   children,

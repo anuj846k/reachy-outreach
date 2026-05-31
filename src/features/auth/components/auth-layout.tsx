@@ -10,11 +10,11 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => {
         >
           <Image
             src='/logos/logo.svg'
-            alt='outreachyy'
+            alt='Reachy'
             width={30}
             height={30}
           />
-          Outreachyy
+          Reachy
         </Link>
         {children}
       </div>
