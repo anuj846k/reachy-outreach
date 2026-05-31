@@ -112,7 +112,7 @@ export const offerings = pgTable('offerings', {
   keyDifferentiators: text('key_differentiators'),
   proofPoints: text('proof_points'),
 
-  extractedMarkdown: text('extracted_markdown'),
+  rawExtractedData: text('raw_extracted_data'),
 
   sourceType: offeringSourceTypeEnum('source_type').notNull().default('manual'),
   sourceUrl: text('source_url'),

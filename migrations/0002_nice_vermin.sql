@@ -1,0 +1,1 @@
+ALTER TABLE "offerings" DROP COLUMN "extracted_markdown";
