@@ -9,6 +9,7 @@ export const requireAuth = async () => {
   if (!session) {
     redirect('/login');
   }
+  return session.user;
 };
 
 export const requireUnauth = async () => {

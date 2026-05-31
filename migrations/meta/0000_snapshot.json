@@ -1,5 +1,5 @@
 {
-  "id": "7aba0128-3c43-4b09-be74-d4272a2eb27d",
+  "id": "c12fb055-7775-4d0c-a18e-b826efb840c4",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -109,6 +109,131 @@
         "account_user_id_user_id_fk": {
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.offerings": {
+      "name": "offerings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "offering_summary": {
+          "name": "offering_summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ideal_customer_profile": {
+          "name": "ideal_customer_profile",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "customer_problems": {
+          "name": "customer_problems",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "key_differentiators": {
+          "name": "key_differentiators",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "proof_points": {
+          "name": "proof_points",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "extracted_markdown": {
+          "name": "extracted_markdown",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_type": {
+          "name": "source_type",
+          "type": "offering_source_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'manual'"
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "extraction_status": {
+          "name": "extraction_status",
+          "type": "extraction_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'{}'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "offerings_user_id_user_id_fk": {
+          "name": "offerings_user_id_user_id_fk",
+          "tableFrom": "offerings",
           "tableTo": "user",
           "columnsFrom": [
             "user_id"
@@ -360,7 +485,29 @@
       "isRLSEnabled": false
     }
   },
-  "enums": {},
+  "enums": {
+    "public.extraction_status": {
+      "name": "extraction_status",
+      "schema": "public",
+      "values": [
+        "pending",
+        "processing",
+        "completed",
+        "failed"
+      ]
+    },
+    "public.offering_source_type": {
+      "name": "offering_source_type",
+      "schema": "public",
+      "values": [
+        "manual",
+        "website",
+        "linkedin",
+        "company",
+        "mixed"
+      ]
+    }
+  },
   "schemas": {},
   "sequences": {},
   "roles": {},

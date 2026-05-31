@@ -69,7 +69,7 @@ export function RegisterForm() {
         },
       },
     );
-    toast.success('Account created successfully! Please log in.');
+    toast.success('Account created successfully!');
   };
   const isPending = form.formState.isSubmitting;
 
