@@ -38,6 +38,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { deleteOutreach } from '@/features/outreach/actions';
 import { OutreachDetailDialog } from './outreach-detail-dialog';
+import { ConversationSheet } from './conversation-sheet';
 
 interface OutreachCardProps {
   id: string;
@@ -196,17 +197,22 @@ export function OutreachCard({
           <span>
             {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
           </span>
-          <Button
-            variant='ghost'
-            size='xs'
-            onClick={(e) => {
-              e.stopPropagation();
-              setDetailOpen(true);
-            }}
-            className='h-auto px-1.5 py-0.5 text-xs gap-0.5'
-          >
-            View <Eye className='size-3' />
-          </Button>
+          <div className="flex items-center gap-1">
+            <div onClick={(e) => e.stopPropagation()}>
+              <ConversationSheet outreachId={id} prospectName={prospectName} />
+            </div>
+            <Button
+              variant='ghost'
+              size='xs'
+              onClick={(e) => {
+                e.stopPropagation();
+                setDetailOpen(true);
+              }}
+              className='h-auto px-1.5 py-0.5 text-xs gap-0.5'
+            >
+              View <Eye className='size-3' />
+            </Button>
+          </div>
         </CardFooter>
       </Card>
 

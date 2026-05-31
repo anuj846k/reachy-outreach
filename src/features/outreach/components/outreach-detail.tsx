@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { ArrowLeft, Copy, Check, Sparkles } from 'lucide-react';
+import { ArrowLeft, Copy, Check, Sparkles, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
+import { ConversationSheet } from './conversation-sheet';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -94,12 +95,22 @@ export function OutreachDetail({ message }: OutreachDetailProps) {
                   : 'Generated outreach message'}
               </CardDescription>
             </div>
-            <div className="flex gap-2 shrink-0">
+            <div className="flex gap-2 shrink-0 items-center">
+              <ConversationSheet
+                outreachId={message.id}
+                prospectName={prospectName || 'Prospect'}
+                trigger={
+                  <Button variant="outline" size="sm" className="gap-1.5 h-9 text-xs">
+                    <MessageSquare className="size-3.5" />
+                    Open conversation
+                  </Button>
+                }
+              />
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleCopy}
-                className="gap-1.5"
+                className="gap-1.5 h-9 text-xs"
               >
                 {copied ? (
                   <Check className="size-3.5" />

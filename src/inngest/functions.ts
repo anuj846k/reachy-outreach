@@ -1,23 +1,22 @@
 import { inngest } from './client';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { generateText } from 'ai';
+import { generateText, Output } from 'ai';
 import { Firecrawl } from 'firecrawl';
 import { db } from '@/db/drizzle';
-import { offerings } from '@/db/schema';
+import { offerings, prospects } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { isLinkedInUrl, scrapeLinkedInCompany } from '@/lib/apify-linkedin';
 import {
   buildLinkedInExtractionPrompt,
   buildProspectExtractionPrompt,
-  parseGeminiJson,
-  parseProspectGeminiJson,
+  offeringExtractionSchema,
+  prospectExtractionSchema,
 } from '@/lib/extractors/gemini-refiner';
-import { prospects } from '@/db/schema';
 
 const google = createGoogleGenerativeAI();
 const firecrawl = new Firecrawl({ apiKey: process.env.FIRECRAWL_API_KEY! });
 
-const offeringSchema = {
+const firecrawlOfferingSchema = {
   type: 'object',
   properties: {
     offeringSummary: {
@@ -43,21 +42,12 @@ const offeringSchema = {
   },
 } as const;
 
-const prospectSchema = {
+const firecrawlProspectSchema = {
   type: 'object',
   properties: {
-    name: {
-      type: 'string',
-      description: 'Full name of the person',
-    },
-    jobTitle: {
-      type: 'string',
-      description: 'Current job title or role',
-    },
-    company: {
-      type: 'string',
-      description: 'Current company or organization',
-    },
+    name: { type: 'string', description: 'Full name of the person' },
+    jobTitle: { type: 'string', description: 'Current job title or role' },
+    company: { type: 'string', description: 'Current company or organization' },
     companyDescription: {
       type: 'string',
       description: 'What the company does (1 sentence)',
@@ -68,7 +58,8 @@ const prospectSchema = {
     },
     painPoints: {
       type: 'string',
-      description: 'Inferred professional challenges based on role and industry',
+      description:
+        'Inferred professional challenges based on role and industry',
     },
     skills: {
       type: 'string',
@@ -128,18 +119,21 @@ export const extractOffering = inngest.createFunction(
           return data;
         });
 
-        const { text: extractedText } = await step.ai.wrap(
+        const { output: extracted } = await step.ai.wrap(
           'extract-offering-from-linkedin',
           generateText,
           {
             model: google('gemini-2.5-flash'),
+            output: Output.object({ schema: offeringExtractionSchema }),
             system:
-              'You are an expert at extracting business value propositions from company data. Return ONLY valid JSON.',
+              'You are an expert at extracting business value propositions from company data.',
             prompt: buildLinkedInExtractionPrompt(linkedinData),
           },
         );
 
-        const extracted = parseGeminiJson(extractedText);
+        if (!extracted) {
+          throw new Error('Failed to extract offering data from LinkedIn');
+        }
 
         extractedData = {
           ...extracted,
@@ -161,7 +155,7 @@ export const extractOffering = inngest.createFunction(
               'markdown',
               {
                 type: 'json',
-                schema: offeringSchema,
+                schema: firecrawlOfferingSchema,
                 prompt: 'Extract the company offering details',
               },
             ],
@@ -248,33 +242,51 @@ export const extractProspect = inngest.createFunction(
       };
 
       if (isLinkedInUrl(url)) {
-        const linkedinData = await step.run('scrape-linkedin-profile', async () => {
-          const data = await scrapeLinkedInCompany(url);
-          if (!data) {
-            throw new Error('LinkedIn scrape returned no data');
-          }
-          return data;
-        });
+        const linkedinData = await step.run(
+          'scrape-linkedin-profile',
+          async () => {
+            const data = await scrapeLinkedInCompany(url);
+            if (!data) {
+              throw new Error('LinkedIn scrape returned no data');
+            }
+            return data;
+          },
+        );
 
-        const { text: extractedText } = await step.ai.wrap(
+        const { output: extracted } = await step.ai.wrap(
           'extract-prospect-from-linkedin',
           generateText,
           {
             model: google('gemini-2.5-flash'),
+            output: Output.object({ schema: prospectExtractionSchema }),
             system:
-              'You are an expert at extracting professional profile details from LinkedIn data. Return ONLY valid JSON.',
+              'You are an expert at extracting professional profile details from LinkedIn data.',
             prompt: buildProspectExtractionPrompt(linkedinData),
           },
         );
 
-        const extracted = parseProspectGeminiJson(extractedText);
+        if (!extracted) {
+          throw new Error('Failed to extract prospect data from LinkedIn');
+        }
 
         extractedData = {
           ...extracted,
           rawExtractedData: JSON.stringify(linkedinData, null, 2),
           metadata: {
-            profileImageUrl: ((linkedinData as Record<string, unknown>).profilePicture as Record<string, unknown>)?.url as string || (linkedinData.photo as string) || null,
-            location: ((linkedinData as Record<string, unknown>).location as Record<string, unknown>)?.linkedinText as string || null,
+            profileImageUrl:
+              ((
+                (linkedinData as Record<string, unknown>)
+                  .profilePicture as Record<string, unknown>
+              )?.url as string) ||
+              (linkedinData.photo as string) ||
+              null,
+            location:
+              ((
+                (linkedinData as Record<string, unknown>).location as Record<
+                  string,
+                  unknown
+                >
+              )?.linkedinText as string) || null,
           },
         };
       } else {
@@ -284,7 +296,7 @@ export const extractProspect = inngest.createFunction(
               'markdown',
               {
                 type: 'json',
-                schema: prospectSchema,
+                schema: firecrawlProspectSchema,
                 prompt: 'Extract the professional profile details',
               },
             ],
