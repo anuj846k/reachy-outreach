@@ -22,6 +22,13 @@
       "when": 1780222168315,
       "tag": "0002_nice_vermin",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1780227011329,
+      "tag": "0003_clean_prowler",
+      "breakpoints": true
     }
   ]
 }

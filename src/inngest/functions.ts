@@ -8,8 +8,11 @@ import { eq } from 'drizzle-orm';
 import { isLinkedInUrl, scrapeLinkedInCompany } from '@/lib/apify-linkedin';
 import {
   buildLinkedInExtractionPrompt,
+  buildProspectExtractionPrompt,
   parseGeminiJson,
+  parseProspectGeminiJson,
 } from '@/lib/extractors/gemini-refiner';
+import { prospects } from '@/db/schema';
 
 const google = createGoogleGenerativeAI();
 const firecrawl = new Firecrawl({ apiKey: process.env.FIRECRAWL_API_KEY! });
@@ -36,6 +39,40 @@ const offeringSchema = {
     proofPoints: {
       type: 'string',
       description: 'Evidence, testimonials, or credibility signals',
+    },
+  },
+} as const;
+
+const prospectSchema = {
+  type: 'object',
+  properties: {
+    name: {
+      type: 'string',
+      description: 'Full name of the person',
+    },
+    jobTitle: {
+      type: 'string',
+      description: 'Current job title or role',
+    },
+    company: {
+      type: 'string',
+      description: 'Current company or organization',
+    },
+    companyDescription: {
+      type: 'string',
+      description: 'What the company does (1 sentence)',
+    },
+    bio: {
+      type: 'string',
+      description: 'Professional summary or about section (2-3 sentences)',
+    },
+    painPoints: {
+      type: 'string',
+      description: 'Inferred professional challenges based on role and industry',
+    },
+    skills: {
+      type: 'string',
+      description: 'Key skills or technologies mentioned, comma-separated',
     },
   },
 } as const;
@@ -178,6 +215,131 @@ export const extractOffering = inngest.createFunction(
           extractionStatus: 'failed',
         })
         .where(eq(offerings.id, offeringId));
+
+      throw error;
+    }
+  },
+);
+
+export const extractProspect = inngest.createFunction(
+  {
+    id: 'extract-prospect',
+    triggers: { event: 'prospect/extract' },
+  },
+  async ({ event, step }) => {
+    const { url, prospectId } = event.data;
+
+    await db
+      .update(prospects)
+      .set({ extractionStatus: 'processing' })
+      .where(eq(prospects.id, prospectId));
+
+    try {
+      let extractedData: {
+        name: string | null;
+        jobTitle: string | null;
+        company: string | null;
+        companyDescription: string | null;
+        bio: string | null;
+        painPoints: string | null;
+        skills: string | null;
+        rawExtractedData: string | null;
+        metadata: Record<string, unknown>;
+      };
+
+      if (isLinkedInUrl(url)) {
+        const linkedinData = await step.run('scrape-linkedin-profile', async () => {
+          const data = await scrapeLinkedInCompany(url);
+          if (!data) {
+            throw new Error('LinkedIn scrape returned no data');
+          }
+          return data;
+        });
+
+        const { text: extractedText } = await step.ai.wrap(
+          'extract-prospect-from-linkedin',
+          generateText,
+          {
+            model: google('gemini-2.5-flash'),
+            system:
+              'You are an expert at extracting professional profile details from LinkedIn data. Return ONLY valid JSON.',
+            prompt: buildProspectExtractionPrompt(linkedinData),
+          },
+        );
+
+        const extracted = parseProspectGeminiJson(extractedText);
+
+        extractedData = {
+          ...extracted,
+          rawExtractedData: JSON.stringify(linkedinData, null, 2),
+          metadata: {
+            profileImageUrl: ((linkedinData as Record<string, unknown>).profilePicture as Record<string, unknown>)?.url as string || (linkedinData.photo as string) || null,
+            location: ((linkedinData as Record<string, unknown>).location as Record<string, unknown>)?.linkedinText as string || null,
+          },
+        };
+      } else {
+        const result = await step.run('call-firecrawl-profile', async () => {
+          return await firecrawl.scrape(url, {
+            formats: [
+              'markdown',
+              {
+                type: 'json',
+                schema: prospectSchema,
+                prompt: 'Extract the professional profile details',
+              },
+            ],
+            onlyMainContent: true,
+            onlyCleanContent: true,
+          });
+        });
+
+        if (!result) {
+          throw new Error('Firecrawl returned no result');
+        }
+
+        const extracted = result.json as Record<string, string>;
+        const meta = result.metadata as Record<string, unknown>;
+
+        extractedData = {
+          name: extracted?.name || null,
+          jobTitle: extracted?.jobTitle || null,
+          company: extracted?.company || null,
+          companyDescription: extracted?.companyDescription || null,
+          bio: extracted?.bio || null,
+          painPoints: extracted?.painPoints || null,
+          skills: extracted?.skills || null,
+          rawExtractedData: result.markdown || null,
+          metadata: {
+            profileImageUrl: (meta?.ogImage as string) || null,
+            location: null,
+          },
+        };
+      }
+
+      await db
+        .update(prospects)
+        .set({
+          name: extractedData.name ?? '',
+          jobTitle: extractedData.jobTitle,
+          company: extractedData.company,
+          companyDescription: extractedData.companyDescription,
+          bio: extractedData.bio,
+          painPoints: extractedData.painPoints,
+          skills: extractedData.skills,
+          rawExtractedData: extractedData.rawExtractedData,
+          extractionStatus: 'completed',
+          metadata: extractedData.metadata,
+        })
+        .where(eq(prospects.id, prospectId));
+
+      return { success: true, prospectId };
+    } catch (error) {
+      await db
+        .update(prospects)
+        .set({
+          extractionStatus: 'failed',
+        })
+        .where(eq(prospects.id, prospectId));
 
       throw error;
     }

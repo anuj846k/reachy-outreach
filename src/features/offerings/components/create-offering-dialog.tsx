@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -166,10 +167,26 @@ export function CreateOfferingDialog({ userId, open, onOpenChange }: CreateOffer
           className="mt-1 flex-col"
         >
           <TabsList className="w-full">
-            <TabsTrigger value="url" className="flex-1 hover:bg-background/70">
+            <TabsTrigger
+              value="url"
+              className={cn(
+                'flex-1',
+                activeTab === 'url'
+                  ? 'bg-background hover:bg-background'
+                  : 'hover:bg-background/70',
+              )}
+            >
               From URL
             </TabsTrigger>
-            <TabsTrigger value="manual" className="flex-1 hover:bg-background/70">
+            <TabsTrigger
+              value="manual"
+              className={cn(
+                'flex-1',
+                activeTab === 'manual'
+                  ? 'bg-background hover:bg-background'
+                  : 'hover:bg-background/70',
+              )}
+            >
               Manual
             </TabsTrigger>
           </TabsList>

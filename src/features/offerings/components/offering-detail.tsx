@@ -236,7 +236,7 @@ export function OfferingDetail({ offering }: OfferingDetailProps) {
             <div className='relative'>
               <pre
                 className={[
-                  'whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground font-mono overflow-hidden transition-all duration-500 ease-in-out',
+                  'w-full max-w-full whitespace-pre-wrap break-all text-xs leading-relaxed text-muted-foreground font-mono overflow-hidden transition-all duration-500 ease-in-out',
                   markdownExpanded
                     ? 'max-h-[600px] overflow-y-auto pb-4'
                     : 'max-h-[9rem]',

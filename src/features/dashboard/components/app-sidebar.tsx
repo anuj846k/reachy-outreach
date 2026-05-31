@@ -156,7 +156,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
                   </Avatar>
                   <div className='flex flex-col flex-1 text-left min-w-0 leading-tight gap-0.5'>
                     <span className='truncate font-semibold text-xs text-sidebar-foreground'>
-                      {user?.name || 'User'}
+                      {user.email?.split('@')[0] || 'User'}
                     </span>
                     <span className='truncate text-[10px] text-sidebar-foreground/50 font-medium'>
                       {user?.email || 'user@example.com'}
@@ -182,7 +182,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
                   </Avatar>
                   <div className='flex flex-col text-left min-w-0 leading-tight gap-0.5'>
                     <span className='truncate font-semibold text-xs text-sidebar-foreground'>
-                      {user?.name || 'User'}
+                      {user.email?.split('@')[0] || 'User'}
                     </span>
                     <span className='truncate text-[10px] text-sidebar-foreground/50'>
                       {user?.email || 'user@example.com'}

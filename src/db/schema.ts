@@ -155,9 +155,53 @@ export const accountRelations = relations(account, ({ one }) => ({
   }),
 }));
 
+export const prospects = pgTable('prospects', {
+  id: uuid('id').defaultRandom().primaryKey(),
+
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+
+  name: text('name').notNull(),
+  jobTitle: text('job_title'),
+  company: text('company'),
+  companyDescription: text('company_description'),
+  bio: text('bio'),
+  painPoints: text('pain_points'),
+  skills: text('skills'),
+
+  sourceType: offeringSourceTypeEnum('source_type').notNull().default('manual'),
+  sourceUrl: text('source_url'),
+
+  extractionStatus: extractionStatusEnum('extraction_status')
+    .notNull()
+    .default('pending'),
+
+  rawExtractedData: text('raw_extracted_data'),
+
+  metadata: jsonb('metadata').default({}).$type<{
+    profileImageUrl?: string | null;
+    location?: string | null;
+  }>(),
+
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+
+  updatedAt: timestamp('updated_at')
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
 export const offeringRelations = relations(offerings, ({ one }) => ({
   user: one(user, {
     fields: [offerings.userId],
+    references: [user.id],
+  }),
+}));
+
+export const prospectRelations = relations(prospects, ({ one }) => ({
+  user: one(user, {
+    fields: [prospects.userId],
     references: [user.id],
   }),
 }));
