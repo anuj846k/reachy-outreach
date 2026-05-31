@@ -1,5 +1,29 @@
 import { relations } from 'drizzle-orm';
-import { pgTable, text, timestamp, boolean, index } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  text,
+  timestamp,
+  boolean,
+  index,
+  uuid,
+  jsonb,
+  pgEnum,
+} from 'drizzle-orm/pg-core';
+
+export const offeringSourceTypeEnum = pgEnum('offering_source_type', [
+  'manual',
+  'website',
+  'linkedin',
+  'company',
+  'mixed',
+]);
+
+export const extractionStatusEnum = pgEnum('extraction_status', [
+  'pending',
+  'processing',
+  'completed',
+  'failed',
+]);
 
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
@@ -73,6 +97,45 @@ export const verification = pgTable(
   (table) => [index('verification_identifier_idx').on(table.identifier)],
 );
 
+export const offerings = pgTable('offerings', {
+  id: uuid('id').defaultRandom().primaryKey(),
+
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+
+  name: text('name').notNull(),
+
+  offeringSummary: text('offering_summary'),
+  idealCustomerProfile: text('ideal_customer_profile'),
+  customerProblems: text('customer_problems'),
+  keyDifferentiators: text('key_differentiators'),
+  proofPoints: text('proof_points'),
+
+  extractedMarkdown: text('extracted_markdown'),
+
+  sourceType: offeringSourceTypeEnum('source_type').notNull().default('manual'),
+  sourceUrl: text('source_url'),
+
+  extractionStatus: extractionStatusEnum('extraction_status')
+    .notNull()
+    .default('pending'),
+
+  metadata: jsonb('metadata').default({}).$type<{
+    pageTitle?: string | null;
+    pageDescription?: string | null;
+    faviconUrl?: string | null;
+    ogImageUrl?: string | null;
+  }>(),
+
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+
+  updatedAt: timestamp('updated_at')
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account),
@@ -88,6 +151,13 @@ export const sessionRelations = relations(session, ({ one }) => ({
 export const accountRelations = relations(account, ({ one }) => ({
   user: one(user, {
     fields: [account.userId],
+    references: [user.id],
+  }),
+}));
+
+export const offeringRelations = relations(offerings, ({ one }) => ({
+  user: one(user, {
+    fields: [offerings.userId],
     references: [user.id],
   }),
 }));
