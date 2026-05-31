@@ -36,6 +36,13 @@
       "when": 1780230534596,
       "tag": "0004_flowery_maggott",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1780237515894,
+      "tag": "0005_fast_chameleon",
+      "breakpoints": true
     }
   ]
 }

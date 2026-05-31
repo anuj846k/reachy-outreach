@@ -1,8 +1,8 @@
 'use server';
 
 import { db } from '@/db/drizzle';
-import { outreachMessages, offerings, prospects } from '@/db/schema';
-import { and, desc, eq } from 'drizzle-orm';
+import { outreachMessages, offerings, prospects, conversationMessages } from '@/db/schema';
+import { and, asc, desc, eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { requireAuth } from '@/lib/auth-utils';
 import { revalidatePath } from 'next/cache';
@@ -262,4 +262,65 @@ export async function updateOutreach(
   revalidatePath('/dashboard/outreach');
   revalidatePath(`/dashboard/outreach/${id}`);
   return { success: true };
+}
+
+export async function getConversationThread(outreachMessageId: string) {
+  const user = await requireAuth();
+
+  const [outreach] = await db
+    .select()
+    .from(outreachMessages)
+    .where(
+      and(
+        eq(outreachMessages.id, outreachMessageId),
+        eq(outreachMessages.userId, user.id),
+      ),
+    )
+    .limit(1);
+
+  if (!outreach) {
+    throw new Error('Outreach message not found.');
+  }
+
+  const messages = await db
+    .select()
+    .from(conversationMessages)
+    .where(eq(conversationMessages.outreachMessageId, outreachMessageId))
+    .orderBy(asc(conversationMessages.createdAt));
+
+  return messages;
+}
+
+export async function saveAssistantReply(
+  outreachMessageId: string,
+  content: string,
+) {
+  const user = await requireAuth();
+
+  const [outreach] = await db
+    .select()
+    .from(outreachMessages)
+    .where(
+      and(
+        eq(outreachMessages.id, outreachMessageId),
+        eq(outreachMessages.userId, user.id),
+      ),
+    )
+    .limit(1);
+
+  if (!outreach) {
+    throw new Error('Outreach message not found.');
+  }
+
+  const [saved] = await db
+    .insert(conversationMessages)
+    .values({
+      id: randomUUID(),
+      outreachMessageId,
+      role: 'assistant',
+      content,
+    })
+    .returning();
+
+  return saved;
 }

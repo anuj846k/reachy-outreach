@@ -195,7 +195,6 @@ export function AppSidebar({ user }: AppSidebarProps) {
                   asChild
                 >
                   <Link href='/dashboard'>
-                    <Sparkles className='h-4 w-4 text-primary' />
                     <span>Dashboard Home</span>
                   </Link>
                 </DropdownMenuItem>

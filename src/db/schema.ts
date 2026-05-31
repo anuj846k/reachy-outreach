@@ -30,6 +30,7 @@ export const outreachStatusEnum = pgEnum('outreach_status', [
   'sent',
   'archived',
 ]);
+export const messageRoleEnum = pgEnum('message_role', ['user', 'assistant']);
 
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
@@ -237,9 +238,22 @@ export const outreachMessages = pgTable('outreach_messages', {
     .notNull(),
 });
 
+export const conversationMessages = pgTable('conversation_messages', {
+  id: uuid('id').defaultRandom().primaryKey(),
+
+  outreachMessageId: uuid('outreach_message_id')
+    .notNull()
+    .references(() => outreachMessages.id, { onDelete: 'cascade' }),
+
+  role: messageRoleEnum('role').notNull(),
+  content: text('content').notNull(),
+
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 export const outreachMessageRelations = relations(
   outreachMessages,
-  ({ one }) => ({
+  ({ one, many }) => ({
     user: one(user, {
       fields: [outreachMessages.userId],
       references: [user.id],
@@ -251,6 +265,17 @@ export const outreachMessageRelations = relations(
     prospect: one(prospects, {
       fields: [outreachMessages.prospectId],
       references: [prospects.id],
+    }),
+    conversationMessages: many(conversationMessages),
+  }),
+);
+
+export const conversationMessageRelations = relations(
+  conversationMessages,
+  ({ one }) => ({
+    outreachMessage: one(outreachMessages, {
+      fields: [conversationMessages.outreachMessageId],
+      references: [outreachMessages.id],
     }),
   }),
 );
