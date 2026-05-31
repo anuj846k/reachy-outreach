@@ -1,16 +1,10 @@
-export default function ProspectsPage() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Prospects</h1>
-        <p className="text-muted-foreground">
-          Manage your outreach targets
-        </p>
-      </div>
+import { requireAuth } from '@/lib/auth-utils';
+import { getProspects } from '@/features/prospects/actions';
+import { ProspectsView } from '@/features/prospects/components/prospects-view';
 
-      <div className="rounded-lg border bg-card p-8 text-center">
-        <p className="text-muted-foreground">No prospects yet. Add your first prospect to get started.</p>
-      </div>
-    </div>
-  );
+export default async function ProspectsPage() {
+  const user = await requireAuth();
+  const prospects = await getProspects(user.id);
+
+  return <ProspectsView userId={user.id} prospects={prospects} />;
 }
