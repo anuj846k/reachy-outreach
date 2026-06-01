@@ -1,31 +1,41 @@
-export default function DashboardPage() {
+import { getDashboardStats, getMessagesByDay, getConversationsByDay, getStatusBreakdown, getTopOfferings } from '@/features/dashboard/actions';
+import { StatsCards } from '@/features/dashboard/components/stats-cards';
+import { MessagesChart } from '@/features/dashboard/components/messages-chart';
+import { DateRangeFilter } from '@/features/dashboard/components/date-range-filter';
+import { Suspense } from 'react';
+
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ days?: string }> }) {
+  const { days: daysParam } = await searchParams;
+  const days = Number(daysParam) || 30;
+
+  const [stats, messagesByDay] = await Promise.all([
+    getDashboardStats(),
+    getMessagesByDay(days),
+  ]);
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Overview of your outreach activity
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">
+            Overview of your outreach activity
+          </p>
+        </div>
+        <Suspense>
+          <DateRangeFilter />
+        </Suspense>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-lg border bg-card p-6">
-          <div className="text-sm font-medium text-muted-foreground">Total Messages</div>
-          <div className="mt-2 text-3xl font-bold">0</div>
-        </div>
-        <div className="rounded-lg border bg-card p-6">
-          <div className="text-sm font-medium text-muted-foreground">Offerings</div>
-          <div className="mt-2 text-3xl font-bold">0</div>
-        </div>
-        <div className="rounded-lg border bg-card p-6">
-          <div className="text-sm font-medium text-muted-foreground">Prospects</div>
-          <div className="mt-2 text-3xl font-bold">0</div>
-        </div>
-        <div className="rounded-lg border bg-card p-6">
-          <div className="text-sm font-medium text-muted-foreground">Conversations</div>
-          <div className="mt-2 text-3xl font-bold">0</div>
-        </div>
-      </div>
+      <StatsCards
+        totalMessages={stats.totalMessages}
+        totalOfferings={stats.totalOfferings}
+        totalProspects={stats.totalProspects}
+        totalConversations={stats.totalConversations}
+        todayMessages={stats.todayMessages}
+      />
+
+      <MessagesChart data={messagesByDay} />
     </div>
   );
 }
