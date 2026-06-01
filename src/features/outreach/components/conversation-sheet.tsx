@@ -210,6 +210,14 @@ export function ConversationSheet({
                   />
                 );
               })}
+
+              {isBusy && messages[messages.length - 1]?.role === 'user' && (
+                <ConversationMessage
+                  role="assistant"
+                  content=""
+                  status="submitted"
+                />
+              )}
             </>
           )}
         </div>

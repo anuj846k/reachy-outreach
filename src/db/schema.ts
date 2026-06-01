@@ -229,9 +229,9 @@ export const outreachMessages = pgTable('outreach_messages', {
   customContext: text('custom_context'),
 
   status: outreachStatusEnum('status').notNull().default('draft'),
+  rollingSummary: text('rolling_summary'),
 
   createdAt: timestamp('created_at').defaultNow().notNull(),
-
   updatedAt: timestamp('updated_at')
     .defaultNow()
     .$onUpdate(() => new Date())

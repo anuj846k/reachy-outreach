@@ -3,8 +3,13 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { generateText, Output } from 'ai';
 import { Firecrawl } from 'firecrawl';
 import { db } from '@/db/drizzle';
-import { offerings, prospects } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import {
+  conversationMessages,
+  offerings,
+  outreachMessages,
+  prospects,
+} from '@/db/schema';
+import { asc, eq } from 'drizzle-orm';
 import { isLinkedInUrl, scrapeLinkedInCompany } from '@/lib/apify-linkedin';
 import {
   buildLinkedInExtractionPrompt,
@@ -355,5 +360,83 @@ export const extractProspect = inngest.createFunction(
 
       throw error;
     }
+  },
+);
+
+export const summarizeConversation = inngest.createFunction(
+  {
+    id: 'summarize-conversation',
+
+    triggers: { event: 'conversation/summarize' },
+  },
+  async ({ event, step }) => {
+    const { outreachMessageId } = event.data;
+
+    const [outreach] = await step.run('fetch-outreach', () =>
+      db
+        .select()
+        .from(outreachMessages)
+        .where(eq(outreachMessages.id, outreachMessageId))
+        .limit(1),
+    );
+
+    const rawMessages = await step.run('fetch-messages', () =>
+      db
+        .select()
+        .from(conversationMessages)
+        .where(eq(conversationMessages.outreachMessageId, outreachMessageId))
+        .orderBy(asc(conversationMessages.createdAt)),
+    );
+
+    const activeCount = rawMessages.length <= 6 ? 2 : 4;
+    const messagesToSummarize = rawMessages.slice(0, -activeCount);
+    if (messagesToSummarize.length === 0)
+      return { success: false, reason: 'No messages to summarize' };
+
+    const formattedMessages = messagesToSummarize
+      .map(
+        (m) =>
+          `${m.role === 'user' ? 'PROSPECT' : 'SALESPERSON'}: ${m.content}`,
+      )
+      .join('\n\n');
+
+    const oldSummary = outreach.rollingSummary || 'No old summary exists.';
+
+    const systemPrompt = `You are a helpful assistant specialized in writing highly compressed, objective summaries of sales conversation histories.
+Your task is to merge the OLD SUMMARY with the NEW BATCH OF MESSAGES and output a consolidated NEW SUMMARY.
+
+Rules:
+- The summary must be extremely concise and direct (under 3 sentences max).
+- It must state key agreements, specific objections (e.g., refund queries, pricing discussions), and the current state of the relationship.
+- Avoid repeating details. Write in a neutral, objective business tone.
+- Do NOT output greetings, conversational filler, or headers. Write ONLY the summary copy.`;
+
+    const promptText = `
+OLD SUMMARY:
+${oldSummary}
+
+NEW BATCH OF MESSAGES TO INCORPORATE:
+${formattedMessages}
+
+Generate the updated, consolidated summary now (under 3 sentences):`;
+
+    const { text: newSummary } = await step.ai.wrap(
+      'generate-summary',
+      generateText,
+      {
+        model: google('gemini-2.5-flash'),
+        system: systemPrompt,
+        prompt: promptText,
+      },
+    );
+
+    await step.run('save-summary', () =>
+      db
+        .update(outreachMessages)
+        .set({ rollingSummary: newSummary.trim() })
+        .where(eq(outreachMessages.id, outreachMessageId)),
+    );
+
+    return { success: true, outreachMessageId };
   },
 );
