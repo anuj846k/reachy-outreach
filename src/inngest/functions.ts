@@ -137,7 +137,7 @@ export const extractOffering = inngest.createFunction(
           },
         );
 
-        const extracted = result.output;
+        const extracted = result.output ?? (result as any)._output;
 
         if (!extracted) {
           throw new Error('Failed to extract offering data from LinkedIn');
@@ -345,7 +345,7 @@ export const extractProspect = inngest.createFunction(
           }
         );
 
-        const extracted = result.output;
+        const extracted = result.output ?? (result as any)._output;
 
         if (!extracted) {
           throw new Error('Gemini failed to extract consolidated profile');
