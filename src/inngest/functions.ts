@@ -13,10 +13,11 @@ import { asc, eq } from 'drizzle-orm';
 import { isLinkedInUrl, scrapeLinkedInCompany } from '@/lib/apify-linkedin';
 import {
   buildLinkedInExtractionPrompt,
-  buildProspectExtractionPrompt,
+  buildConsolidatedProspectPrompt,
   offeringExtractionSchema,
   prospectExtractionSchema,
 } from '@/lib/extractors/gemini-refiner';
+import { type ProspectSource } from '@/features/prospects/lib/utils';
 
 const google = createGoogleGenerativeAI();
 const firecrawl = new Firecrawl({ apiKey: process.env.FIRECRAWL_API_KEY! });
@@ -124,7 +125,7 @@ export const extractOffering = inngest.createFunction(
           return data;
         });
 
-        const { output: extracted } = await step.ai.wrap(
+        const result = await step.ai.wrap(
           'extract-offering-from-linkedin',
           generateText,
           {
@@ -135,6 +136,8 @@ export const extractOffering = inngest.createFunction(
             prompt: buildLinkedInExtractionPrompt(linkedinData),
           },
         );
+
+        const extracted = result.output;
 
         if (!extracted) {
           throw new Error('Failed to extract offering data from LinkedIn');
@@ -226,140 +229,171 @@ export const extractProspect = inngest.createFunction(
     triggers: { event: 'prospect/extract' },
   },
   async ({ event, step }) => {
-    const { url, prospectId } = event.data;
+    const { prospectId, sources = [], prospectName = '' } = event.data;
 
-    await db
-      .update(prospects)
-      .set({ extractionStatus: 'processing' })
-      .where(eq(prospects.id, prospectId));
+    if (sources.length === 0) {
+      await db
+        .update(prospects)
+        .set({ extractionStatus: 'completed' })
+        .where(eq(prospects.id, prospectId));
+      return { success: true, prospectId, reason: 'No sources found' };
+    }
 
-    try {
-      let extractedData: {
-        name: string | null;
-        jobTitle: string | null;
-        company: string | null;
-        companyDescription: string | null;
-        bio: string | null;
-        painPoints: string | null;
-        skills: string | null;
-        rawExtractedData: string | null;
-        metadata: Record<string, unknown>;
-      };
+    const processingSources: ProspectSource[] = sources.map((s: any) => ({
+      ...s,
+      status: 'processing',
+    }));
 
-      if (isLinkedInUrl(url)) {
-        const linkedinData = await step.run(
-          'scrape-linkedin-profile',
-          async () => {
-            const data = await scrapeLinkedInCompany(url);
-            if (!data) {
-              throw new Error('LinkedIn scrape returned no data');
+    await step.run('set-processing-status', async () => {
+      await db
+        .update(prospects)
+        .set({
+          extractionStatus: 'processing',
+          sources: processingSources,
+        })
+        .where(eq(prospects.id, prospectId));
+    });
+
+    const scrapedResults: Array<{ url: string; content: string }> = [];
+    const finalSources = [...processingSources];
+    let profileImageUrl: string | null = null;
+    let location: string | null = null;
+
+    for (let i = 0; i < finalSources.length; i++) {
+      const source = finalSources[i];
+      if (source.type === 'url') {
+        try {
+          const url = source.value;
+          if (isLinkedInUrl(url)) {
+            const linkedinData = await step.run(
+              `scrape-linkedin-${source.id}`,
+              async () => {
+                const data = await scrapeLinkedInCompany(url);
+                if (!data) {
+                  throw new Error('LinkedIn scrape returned no data');
+                }
+                return data;
+              }
+            );
+
+            scrapedResults.push({
+              url,
+              content: JSON.stringify(linkedinData, null, 2),
+            });
+
+            if (linkedinData) {
+              const photo = ((linkedinData as any).profilePicture?.url as string) || (linkedinData.photo as string) || null;
+              if (photo) profileImageUrl = photo;
+              const loc = ((linkedinData as any).location?.linkedinText as string) || null;
+              if (loc) location = loc;
             }
-            return data;
-          },
-        );
 
-        const { output: extracted } = await step.ai.wrap(
-          'extract-prospect-from-linkedin',
+            source.status = 'completed';
+          } else {
+            const result = await step.run(
+              `scrape-firecrawl-${source.id}`,
+              async () => {
+                return await firecrawl.scrape(url, {
+                  formats: ['markdown'],
+                  onlyMainContent: true,
+                  onlyCleanContent: true,
+                });
+              }
+            );
+
+            if (result && result.markdown) {
+              scrapedResults.push({
+                url,
+                content: result.markdown,
+              });
+
+              const metaImage = (result.metadata as any)?.ogImage as string;
+              if (metaImage && !profileImageUrl) {
+                profileImageUrl = metaImage;
+              }
+            } else {
+              throw new Error('Firecrawl returned no content');
+            }
+
+            source.status = 'completed';
+          }
+        } catch (err) {
+          console.error(`Scrape failed for source ${source.value}:`, err);
+          source.status = 'failed';
+          source.error = err instanceof Error ? err.message : 'Unknown scraping error';
+        }
+      }
+    }
+
+    await step.run('save-scraped-sources', async () => {
+      await db
+        .update(prospects)
+        .set({ sources: finalSources })
+        .where(eq(prospects.id, prospectId));
+    });
+
+    if (scrapedResults.length > 0) {
+      try {
+        const result = await step.ai.wrap(
+          'reconcile-prospect-sources',
           generateText,
           {
             model: google('gemini-2.5-flash'),
             output: Output.object({ schema: prospectExtractionSchema }),
-            system:
-              'You are an expert at extracting professional profile details from LinkedIn data.',
-            prompt: buildProspectExtractionPrompt(linkedinData),
-          },
+            system: 'You are a professional research assistant that synthesizes information from multiple source URLs into a single, unified professional profile.',
+            prompt: buildConsolidatedProspectPrompt(scrapedResults),
+          }
         );
 
+        const extracted = result.output;
+
         if (!extracted) {
-          throw new Error('Failed to extract prospect data from LinkedIn');
+          throw new Error('Gemini failed to extract consolidated profile');
         }
 
-        extractedData = {
-          ...extracted,
-          rawExtractedData: JSON.stringify(linkedinData, null, 2),
-          metadata: {
-            profileImageUrl:
-              ((
-                (linkedinData as Record<string, unknown>)
-                  .profilePicture as Record<string, unknown>
-              )?.url as string) ||
-              (linkedinData.photo as string) ||
-              null,
-            location:
-              ((
-                (linkedinData as Record<string, unknown>).location as Record<
-                  string,
-                  unknown
-                >
-              )?.linkedinText as string) || null,
-          },
-        };
-      } else {
-        const result = await step.run('call-firecrawl-profile', async () => {
-          return await firecrawl.scrape(url, {
-            formats: [
-              'markdown',
-              {
-                type: 'json',
-                schema: firecrawlProspectSchema,
-                prompt: 'Extract the professional profile details',
+        await step.run('save-prospect-insights', async () => {
+          await db
+            .update(prospects)
+            .set({
+              name: extracted.name || prospectName,
+              jobTitle: extracted.jobTitle || null,
+              company: extracted.company || null,
+              companyDescription: extracted.companyDescription || null,
+              bio: extracted.bio || null,
+              painPoints: extracted.painPoints || null,
+              skills: extracted.skills || null,
+              rawExtractedData: scrapedResults
+                .map((r) => `URL: ${r.url}\n\n${r.content}`)
+                .join('\n\n====================\n\n'),
+              extractionStatus: 'completed',
+              metadata: {
+                profileImageUrl: profileImageUrl || null,
+                location: location || null,
               },
-            ],
-            onlyMainContent: true,
-            onlyCleanContent: true,
-          });
+            })
+            .where(eq(prospects.id, prospectId));
         });
-
-        if (!result) {
-          throw new Error('Firecrawl returned no result');
-        }
-
-        const extracted = result.json as Record<string, string>;
-        const meta = result.metadata as Record<string, unknown>;
-
-        extractedData = {
-          name: extracted?.name || null,
-          jobTitle: extracted?.jobTitle || null,
-          company: extracted?.company || null,
-          companyDescription: extracted?.companyDescription || null,
-          bio: extracted?.bio || null,
-          painPoints: extracted?.painPoints || null,
-          skills: extracted?.skills || null,
-          rawExtractedData: result.markdown || null,
-          metadata: {
-            profileImageUrl: (meta?.ogImage as string) || null,
-            location: null,
-          },
-        };
+      } catch (err) {
+        console.error('Gemini consolidation failed:', err);
+        await db
+          .update(prospects)
+          .set({ extractionStatus: 'failed' })
+          .where(eq(prospects.id, prospectId));
+        throw err;
       }
-
-      await db
-        .update(prospects)
-        .set({
-          name: extractedData.name ?? '',
-          jobTitle: extractedData.jobTitle,
-          company: extractedData.company,
-          companyDescription: extractedData.companyDescription,
-          bio: extractedData.bio,
-          painPoints: extractedData.painPoints,
-          skills: extractedData.skills,
-          rawExtractedData: extractedData.rawExtractedData,
-          extractionStatus: 'completed',
-          metadata: extractedData.metadata,
-        })
-        .where(eq(prospects.id, prospectId));
-
-      return { success: true, prospectId };
-    } catch (error) {
-      await db
-        .update(prospects)
-        .set({
-          extractionStatus: 'failed',
-        })
-        .where(eq(prospects.id, prospectId));
-
-      throw error;
+    } else {
+      const hasUrlSources = sources.some((s: any) => s.type === 'url');
+      await step.run('set-overall-completed-or-failed', async () => {
+        await db
+          .update(prospects)
+          .set({
+            extractionStatus: hasUrlSources ? 'failed' : 'completed',
+          })
+          .where(eq(prospects.id, prospectId));
+      });
     }
+
+    return { success: true, prospectId };
   },
 );
 

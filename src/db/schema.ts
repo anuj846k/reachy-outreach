@@ -1,4 +1,5 @@
 import { relations } from 'drizzle-orm';
+import type { ProspectSource } from '@/features/prospects/lib/utils';
 import {
   pgTable,
   text,
@@ -177,8 +178,7 @@ export const prospects = pgTable('prospects', {
   painPoints: text('pain_points'),
   skills: text('skills'),
 
-  sourceType: offeringSourceTypeEnum('source_type').notNull().default('manual'),
-  sourceUrl: text('source_url'),
+  sources: jsonb('sources').default([]).$type<ProspectSource[]>(),
 
   extractionStatus: extractionStatusEnum('extraction_status')
     .notNull()

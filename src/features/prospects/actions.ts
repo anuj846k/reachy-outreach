@@ -5,13 +5,14 @@ import { db } from '@/db/drizzle';
 import { prospects } from '@/db/schema';
 import { and, desc, eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
-import { isLinkedInUrl } from '@/lib/apify-linkedin';
 import { requireAuth } from '@/lib/auth-utils';
 import { revalidatePath } from 'next/cache';
+import { type ProspectSource } from '@/features/prospects/lib/utils';
 
-export interface ManualProspectData {
+export interface CreateProspectWithSourcesData {
   userId: string;
   name: string;
+  sources: Array<{ type: 'url'; value: string }>;
   jobTitle?: string;
   company?: string;
   companyDescription?: string;
@@ -28,25 +29,46 @@ export interface UpdateProspectData {
   bio?: string | null;
   painPoints?: string | null;
   skills?: string | null;
-  sourceUrl?: string | null;
+  sources?: ProspectSource[] | null;
 }
 
-export async function createProspectWithExtraction(formData: {
-  name: string;
-  sourceUrl: string;
-  userId: string;
-}) {
-  const { name, sourceUrl, userId } = formData;
+export async function createProspectWithSources(
+  data: CreateProspectWithSourcesData,
+) {
+  const {
+    userId,
+    name,
+    sources,
+    jobTitle,
+    company,
+    companyDescription,
+    bio,
+    painPoints,
+    skills,
+  } = data;
+
+  const dbSources: ProspectSource[] = sources.map((s) => ({
+    id: randomUUID(),
+    type: s.type,
+    value: s.value,
+    status: 'pending',
+    error: null,
+  }));
 
   const [prospect] = await db
     .insert(prospects)
     .values({
       id: randomUUID(),
-      name,
       userId,
-      sourceUrl,
-      sourceType: isLinkedInUrl(sourceUrl) ? 'linkedin' : 'website',
-      extractionStatus: 'pending',
+      name,
+      sources: dbSources,
+      extractionStatus: sources.length > 0 ? 'pending' : 'completed',
+      jobTitle: jobTitle || null,
+      company: company || null,
+      companyDescription: companyDescription || null,
+      bio: bio || null,
+      painPoints: painPoints || null,
+      skills: skills || null,
     })
     .returning();
 
@@ -54,17 +76,24 @@ export async function createProspectWithExtraction(formData: {
     throw new Error('Failed to create prospect');
   }
 
-  await inngest.send({
-    name: 'prospect/extract',
-    data: { url: sourceUrl, prospectId: prospect.id },
-  });
+  if (sources.length > 0) {
+    await inngest.send({
+      name: 'prospect/extract',
+      data: {
+        prospectId: prospect.id,
+        sources: dbSources,
+        prospectName: prospect.name,
+      },
+    });
+  }
 
   revalidatePath('/dashboard/prospects');
 
   return {
     success: true,
     prospectId: prospect.id,
-    message: 'Extraction started',
+    message:
+      sources.length > 0 ? 'Extraction started' : 'Prospect created manually',
   };
 }
 
@@ -85,8 +114,7 @@ export async function getProspects(userId: string) {
       name: prospects.name,
       jobTitle: prospects.jobTitle,
       company: prospects.company,
-      sourceUrl: prospects.sourceUrl,
-      sourceType: prospects.sourceType,
+      sources: prospects.sources,
       extractionStatus: prospects.extractionStatus,
       createdAt: prospects.createdAt,
       metadata: prospects.metadata,
@@ -107,48 +135,13 @@ export async function deleteProspect(id: string) {
     .returning({ id: prospects.id });
 
   if (!deleted) {
-    throw new Error('Prospect not found or you do not have permission to delete it.');
+    throw new Error(
+      'Prospect not found or you do not have permission to delete it.',
+    );
   }
 
   revalidatePath('/dashboard/prospects');
   return { success: true };
-}
-
-export async function createManualProspect(data: ManualProspectData) {
-  const {
-    userId,
-    name,
-    jobTitle,
-    company,
-    companyDescription,
-    bio,
-    painPoints,
-    skills,
-  } = data;
-
-  const [prospect] = await db
-    .insert(prospects)
-    .values({
-      id: randomUUID(),
-      userId,
-      name,
-      sourceType: 'manual',
-      extractionStatus: 'completed',
-      jobTitle: jobTitle || null,
-      company: company || null,
-      companyDescription: companyDescription || null,
-      bio: bio || null,
-      painPoints: painPoints || null,
-      skills: skills || null,
-    })
-    .returning();
-
-  if (!prospect) {
-    throw new Error('Failed to create prospect');
-  }
-
-  revalidatePath('/dashboard/prospects');
-  return { success: true, prospectId: prospect.id };
 }
 
 export async function updateProspect(id: string, data: UpdateProspectData) {
@@ -164,13 +157,15 @@ export async function updateProspect(id: string, data: UpdateProspectData) {
       bio: data.bio ?? null,
       painPoints: data.painPoints ?? null,
       skills: data.skills ?? null,
-      sourceUrl: data.sourceUrl ?? null,
+      sources: data.sources ?? undefined,
     })
     .where(and(eq(prospects.id, id), eq(prospects.userId, user.id)))
     .returning({ id: prospects.id });
 
   if (!updated) {
-    throw new Error('Prospect not found or you do not have permission to edit it.');
+    throw new Error(
+      'Prospect not found or you do not have permission to edit it.',
+    );
   }
 
   revalidatePath('/dashboard/prospects');

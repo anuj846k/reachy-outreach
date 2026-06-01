@@ -25,7 +25,7 @@ export function ProspectsView({ userId, prospects }: ProspectsViewProps) {
             Manage your outreach targets
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 animate-in fade-in-50 duration-200">
           <CreateProspectDialog
             userId={userId}
             open={autoDialogOpen}

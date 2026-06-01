@@ -1,9 +1,10 @@
-export type ProspectSourceType =
-  | 'manual'
-  | 'website'
-  | 'linkedin'
-  | 'company'
-  | 'mixed';
+export interface ProspectSource {
+  id: string;
+  type: 'url';
+  value: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  error?: string | null;
+}
 
 export type ExtractionStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
@@ -12,14 +13,15 @@ export interface Prospect {
   name: string;
   jobTitle: string | null;
   company: string | null;
-  sourceUrl: string | null;
-  sourceType: ProspectSourceType;
   extractionStatus: ExtractionStatus;
   createdAt: Date;
   metadata: {
     profileImageUrl?: string | null;
     location?: string | null;
   } | null;
+  sources: ProspectSource[];
+  sourceUrl?: string | null;
+  sourceType?: string | null;
 }
 
 export interface ProspectDetail extends Prospect {

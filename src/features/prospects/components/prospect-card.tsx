@@ -44,11 +44,12 @@ export function ProspectCard({
   name,
   jobTitle,
   company,
-  sourceUrl,
+  sources,
   extractionStatus,
   createdAt,
   metadata,
 }: Prospect) {
+  const primaryUrl = sources?.find((s) => s.type === 'url')?.value || null;
   const router = useRouter();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -113,14 +114,20 @@ export function ProspectCard({
                     View details
                   </Link>
                 </DropdownMenuItem>
-                {sourceUrl && (
-                  <DropdownMenuItem asChild>
-                    <a href={sourceUrl} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink />
-                      Open source
-                    </a>
-                  </DropdownMenuItem>
-                )}
+                {sources?.filter(s => s.type === 'url').map((source, index) => {
+                  let hostname = 'website';
+                  try {
+                    hostname = new URL(source.value).hostname.replace('www.', '');
+                  } catch (_) {}
+                  return (
+                    <DropdownMenuItem key={source.id || index} asChild>
+                      <a href={source.value} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink />
+                        Open {hostname}
+                      </a>
+                    </DropdownMenuItem>
+                  );
+                })}
                 <DropdownMenuSeparator />
                 <AlertDialogTrigger asChild>
                   <DropdownMenuItem variant="destructive">
@@ -161,17 +168,26 @@ export function ProspectCard({
         {company && (
           <p className="text-sm text-muted-foreground">{company}</p>
         )}
-        {sourceUrl && (
-          <a
-            href={sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors truncate max-w-full mt-1"
-          >
-            <span className="truncate">{new URL(sourceUrl).hostname.replace('www.', '')}</span>
-            <ExternalLink className="size-3 shrink-0" />
-          </a>
-        )}
+        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
+          {sources?.filter(s => s.type === 'url').map((source, index) => {
+            let hostname = 'website';
+            try {
+              hostname = new URL(source.value).hostname.replace('www.', '');
+            } catch (_) {}
+            return (
+              <a
+                key={source.id || index}
+                href={source.value}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors truncate max-w-[150px]"
+              >
+                <span className="truncate">{hostname}</span>
+                <ExternalLink className="size-3 shrink-0" />
+              </a>
+            );
+          })}
+        </div>
       </CardContent>
 
       <CardFooter className="flex items-center justify-between gap-2 text-xs text-muted-foreground">

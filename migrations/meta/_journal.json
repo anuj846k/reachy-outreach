@@ -50,6 +50,13 @@
       "when": 1780287433015,
       "tag": "0006_minor_lily_hollister",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1780300823545,
+      "tag": "0007_faithful_joystick",
+      "breakpoints": true
     }
   ]
 }

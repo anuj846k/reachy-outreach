@@ -53,11 +53,19 @@ LinkedIn Data:
 ${JSON.stringify(linkedinData, null, 2)}`;
 }
 
-export function buildProspectExtractionPrompt(
-  profileData: Record<string, unknown>,
+export function buildConsolidatedProspectPrompt(
+  scrapedSources: Array<{ url: string; content: string }>
 ): string {
-  return `Extract prospect details from this LinkedIn profile or website data.
+  const formatted = scrapedSources
+    .map((src, idx) => `### SOURCE ${idx + 1}: ${src.url}\n\n${src.content}`)
+    .join('\n\n---\n\n');
 
-Profile Data:
-${JSON.stringify(profileData, null, 2)}`;
+  return `You are an expert research analyst. You have been given raw scraped content about a prospect from multiple diverse web sources (e.g., LinkedIn, GitHub, portfolio).
+Reconcile these profiles, merge their skills and background, solve any conflicting data, and extract a single, highly accurate, unified professional profile.
+
+Here is the scraped content from all sources:
+
+${formatted}
+
+Please analyze, reconcile, and extract the unified prospect profile details according to the schema.`;
 }

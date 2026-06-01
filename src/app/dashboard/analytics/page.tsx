@@ -9,7 +9,9 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="rounded-lg border bg-card p-8 text-center">
-        <p className="text-muted-foreground">Analytics will appear here once you start generating messages.</p>
+        <p className="text-muted-foreground">
+          Analytics will appear here once you start generating messages.
+        </p>
       </div>
     </div>
   );

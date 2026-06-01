@@ -31,7 +31,6 @@ const schema = z.object({
   bio: z.string().max(1000).optional(),
   painPoints: z.string().max(500).optional(),
   skills: z.string().max(500).optional(),
-  sourceUrl: z.string().url().optional().or(z.literal('')),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -72,7 +71,6 @@ export function EditProspectDialog({ prospectId, defaultValues }: EditProspectDi
           bio: values.bio || null,
           painPoints: values.painPoints || null,
           skills: values.skills || null,
-          sourceUrl: values.sourceUrl || null,
         });
 
         toast.success('Prospect updated.');
@@ -122,11 +120,6 @@ export function EditProspectDialog({ prospectId, defaultValues }: EditProspectDi
               <Label htmlFor="edit-company">Company</Label>
               <Input id="edit-company" {...register('company')} />
             </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="edit-source-url">Source URL</Label>
-            <Input id="edit-source-url" type="url" {...register('sourceUrl')} />
           </div>
 
           <div className="space-y-1.5">

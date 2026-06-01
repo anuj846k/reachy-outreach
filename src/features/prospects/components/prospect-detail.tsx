@@ -48,13 +48,20 @@ export function ProspectDetailView({ prospect }: ProspectDetailProps) {
     bio,
     painPoints,
     skills,
-    sourceUrl,
-    sourceType,
+    sources,
     extractionStatus,
     createdAt,
     rawExtractedData,
     metadata,
   } = prospect;
+
+  const urlSource = sources?.find((s) => s.type === 'url');
+  const urlSourcesCount = sources?.filter((s) => s.type === 'url').length || 0;
+  const deducedSourceType = urlSourcesCount > 1
+    ? 'mixed'
+    : urlSource
+    ? (urlSource.value.includes('linkedin.com') ? 'linkedin' : 'website')
+    : (sources?.length > 0 ? 'mixed' : 'manual');
 
   const hasInsights =
     companyDescription || bio || painPoints || skills;
@@ -75,7 +82,7 @@ export function ProspectDetailView({ prospect }: ProspectDetailProps) {
               <div className="flex flex-wrap items-center gap-2">
                 <ExtractionStatusBadge status={extractionStatus} />
                 <Badge variant="outline">
-                  {sourceType.charAt(0).toUpperCase() + sourceType.slice(1)}
+                  {deducedSourceType.charAt(0).toUpperCase() + deducedSourceType.slice(1)}
                 </Badge>
               </div>
               <div className="flex items-center gap-3">
@@ -104,7 +111,7 @@ export function ProspectDetailView({ prospect }: ProspectDetailProps) {
               </div>
             </div>
 
-            <div className="flex gap-2 shrink-0">
+            <div className="flex flex-wrap gap-2 shrink-0">
               <EditProspectDialog
                 prospectId={prospect.id}
                 defaultValues={{
@@ -115,17 +122,24 @@ export function ProspectDetailView({ prospect }: ProspectDetailProps) {
                   bio: bio || '',
                   painPoints: painPoints || '',
                   skills: skills || '',
-                  sourceUrl: sourceUrl || '',
                 }}
               />
-              {sourceUrl && (
-                <Button variant="outline" size="sm" asChild>
-                  <a href={sourceUrl} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink />
-                    Source
-                  </a>
-                </Button>
-              )}
+              {sources
+                ?.filter((s) => s.type === 'url')
+                .map((source, index) => {
+                  let hostname = 'Source';
+                  try {
+                    hostname = new URL(source.value).hostname.replace('www.', '');
+                  } catch (_) {}
+                  return (
+                    <Button key={source.id || index} variant="outline" size="sm" asChild>
+                      <a href={source.value} target="_blank" rel="noopener noreferrer" className="gap-1.5">
+                        <ExternalLink className="size-3.5" />
+                        {hostname}
+                      </a>
+                    </Button>
+                  );
+                })}
             </div>
           </div>
         </CardHeader>
