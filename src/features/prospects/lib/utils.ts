@@ -19,7 +19,7 @@ export interface Prospect {
     profileImageUrl?: string | null;
     location?: string | null;
   } | null;
-  sources: ProspectSource[];
+  sources: ProspectSource[] | null;
   sourceUrl?: string | null;
   sourceType?: string | null;
 }

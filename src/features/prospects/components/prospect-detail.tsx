@@ -61,7 +61,7 @@ export function ProspectDetailView({ prospect }: ProspectDetailProps) {
     ? 'mixed'
     : urlSource
     ? (urlSource.value.includes('linkedin.com') ? 'linkedin' : 'website')
-    : (sources?.length > 0 ? 'mixed' : 'manual');
+    : ((sources?.length ?? 0) > 0 ? 'mixed' : 'manual');
 
   const hasInsights =
     companyDescription || bio || painPoints || skills;
