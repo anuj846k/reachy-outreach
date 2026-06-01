@@ -5,8 +5,14 @@ import { NextRequest } from 'next/server';
 import { streamText, smoothStream } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { db } from '@/db/drizzle';
-import { outreachMessages, conversationMessages, offerings, prospects } from '@/db/schema';
-import { eq, and, asc } from 'drizzle-orm';
+import {
+  outreachMessages,
+  conversationMessages,
+  offerings,
+  prospects,
+} from '@/db/schema';
+import { eq, asc } from 'drizzle-orm';
+import { inngest } from '@/inngest/client';
 
 const google = createGoogleGenerativeAI();
 
@@ -15,7 +21,9 @@ export async function POST(req: NextRequest) {
     const { outreachMessageId, replyText } = await req.json();
 
     if (!outreachMessageId || !replyText) {
-      return new Response('Missing outreachMessageId or replyText', { status: 400 });
+      return new Response('Missing outreachMessageId or replyText', {
+        status: 400,
+      });
     }
 
     const [outreach] = await db
@@ -34,9 +42,27 @@ export async function POST(req: NextRequest) {
       .where(eq(conversationMessages.outreachMessageId, outreachMessageId))
       .orderBy(asc(conversationMessages.createdAt));
 
-    const threadHistory = existingMessages
-      .map((m) => `${m.role === 'user' ? 'PROSPECT' : 'SALESPERSON'}: ${m.content}`)
-      .join('\n\n');
+    let threadHistory = '';
+    if (outreach.rollingSummary) {
+      console.log('📝 [Reachy Reply] Found rolling summary in DB:', outreach.rollingSummary);
+      const activeMessages = existingMessages.slice(-4);
+      console.log(`💬 [Reachy Reply] Feeding rolling summary + last ${activeMessages.length} active messages.`);
+      const formattedActive = activeMessages
+        .map(
+          (m) =>
+            `${m.role === 'user' ? 'PROSPECT' : 'SALESPERSON'}: ${m.content}`,
+        )
+        .join('\n\n');
+      threadHistory = `ROLLING SUMMARY OF CONVERSATION SO FAR:\n${outreach.rollingSummary}\n\nACTIVE CONVERSATION HISTORY:\n${formattedActive}`;
+    } else {
+      console.log('⚠️ [Reachy Reply] No rolling summary found. Falling back to full message history.');
+      threadHistory = existingMessages
+        .map(
+          (m) =>
+            `${m.role === 'user' ? 'PROSPECT' : 'SALESPERSON'}: ${m.content}`,
+        )
+        .join('\n\n');
+    }
 
     let offeringContext = '';
     if (outreach.offeringId) {
@@ -109,6 +135,24 @@ Write ONLY the final response copy. No JSON, no subject line, no labels.`;
           role: 'assistant',
           content: text,
         });
+
+        const totalCount = existingMessages.length + 2;
+        console.log(`📈 [Reachy Reply] Total messages in thread: ${totalCount}`);
+
+        const TRIGGER_LIMIT = 10;
+        if (totalCount >= TRIGGER_LIMIT && totalCount % TRIGGER_LIMIT === 0) {
+          try {
+            console.log(`🚀 [Reachy Reply] Threshold reached (${TRIGGER_LIMIT}). Triggering Inngest conversation/summarize...`);
+            await inngest.send({
+              name: 'conversation/summarize',
+              data: { outreachMessageId },
+            });
+          } catch (err) {
+            console.error('❌ [Reachy Reply] Failed to trigger conversation/summarize event:', err);
+          }
+        } else {
+          console.log(`ℹ️ [Reachy Reply] Next summarization will trigger at ${Math.ceil((totalCount + 1) / TRIGGER_LIMIT) * TRIGGER_LIMIT} messages.`);
+        }
       },
     });
 

@@ -43,6 +43,13 @@
       "when": 1780237515894,
       "tag": "0005_fast_chameleon",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1780287433015,
+      "tag": "0006_minor_lily_hollister",
+      "breakpoints": true
     }
   ]
 }

@@ -60,11 +60,11 @@ export function ConversationMessage({
             : 'bg-muted text-foreground',
         )}
       >
-        {/* Submitted state: thinking indicator before first token */}
         {isSubmitted && !isUser && !content && (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="size-3.5 animate-spin" />
-            <span className="text-xs">Thinking…</span>
+          <div className="flex items-center gap-1 py-1.5 px-0.5">
+            <span className="size-2 rounded-full bg-primary/50 animate-bounce [animation-delay:-0.3s] shrink-0" />
+            <span className="size-2 rounded-full bg-primary/50 animate-bounce [animation-delay:-0.15s] shrink-0" />
+            <span className="size-2 rounded-full bg-primary/50 animate-bounce shrink-0" />
           </div>
         )}
 
