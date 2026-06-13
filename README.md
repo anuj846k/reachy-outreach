@@ -125,31 +125,31 @@ can see what it actually produces?
 
 ### Prospect extraction
 
-![prospect](/prospect.png)
+![prospect](./public/prospect.png)
 
 &nbsp;
 
-![prospect-details](/prospect-details.png)
+![prospect-details](./public/prospect-details.png)
 
 &nbsp;
 
 ### Outreach generation
 
-![offereing](/offereing.png)
+![offereing](./public/offereing.png)
 
 &nbsp;
 
-![offering-details](/offering-details.png)
+![offering-details](./public/offering-details.png)
 
 &nbsp;
 
 ### Conversation & analytics
 
-![conversation](/conversation.png)
+![conversation](./public/conversation.png)
 
 &nbsp;
 
-![analytics](/analytics.png)
+![analytics](./public/analytics.png)
 
 ---
 
