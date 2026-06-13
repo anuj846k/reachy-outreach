@@ -121,6 +121,38 @@ can see what it actually produces?
 
 
 
+## Screenshots
+
+### Prospect extraction
+
+![prospect](/prospect.png)
+
+&nbsp;
+
+![prospect-details](/prospect-details.png)
+
+&nbsp;
+
+### Outreach generation
+
+![offereing](/offereing.png)
+
+&nbsp;
+
+![offering-details](/offering-details.png)
+
+&nbsp;
+
+### Conversation & analytics
+
+![conversation](/conversation.png)
+
+&nbsp;
+
+![analytics](/analytics.png)
+
+---
+
 ## Stack
 
 | Layer | Technology |
