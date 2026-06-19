@@ -157,9 +157,9 @@ can see what it actually produces?
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 15 (App Router) |
+| Framework | Next.js 16 (App Router) |
 | Auth | Better Auth |
-| Database | Neon Postgres + Drizzle ORM |
+| Database | Amazon Aurora PostgreSQL + Drizzle ORM (IAM Auth) |
 | Background Jobs | Inngest |
 | Web Scraping | Firecrawl + Apify (LinkedIn) |
 | AI | Google Gemini via Vercel AI SDK |
@@ -174,11 +174,12 @@ pnpm install
 
 # Copy env vars
 cp .env.example .env
-# Fill in: DATABASE_URL, BETTER_AUTH_SECRET, GOOGLE_GENERATIVE_AI_API_KEY,
+# Fill in: AURORA_ENDPOINT, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY,
+#          AWS_REGION, BETTER_AUTH_SECRET, GOOGLE_GENERATIVE_AI_API_KEY,
 #          FIRECRAWL_API_KEY, APIFY_API_TOKEN, NEXT_PUBLIC_APP_URL
 
 # Run DB migrations
-pnpm db:migrate
+pnpm db:aws push
 
 # Start dev server
 pnpm dev
@@ -192,14 +193,14 @@ npx inngest-cli@latest dev
 ## Architecture Overview
 
 ```
-Browser → Next.js Server Action → Neon Postgres
+Browser → Next.js Server Action → Aurora PostgreSQL (IAM Auth)
                               ↓
                          Inngest Event
                               ↓
-                    Background Function
-                    ├── Apify (LinkedIn)
-                    ├── Firecrawl (other URLs)
-                    └── Gemini (consolidation)
+                     Background Function
+                     ├── Apify (LinkedIn)
+                     ├── Firecrawl (other URLs)
+                     └── Gemini (consolidation)
 ```
 
 ---
@@ -307,12 +308,15 @@ conversation_messages   role (user/assistant), content, FK → outreach_messages
 ## Environment Variables
 
 ```bash
-DATABASE_URL=               # Neon Postgres connection string
-BETTER_AUTH_SECRET=         # Random secret for session signing
+AURORA_ENDPOINT=             # Aurora PostgreSQL writer endpoint
+AWS_ACCESS_KEY_ID=           # IAM user for DB auth
+AWS_SECRET_ACCESS_KEY=       # IAM user for DB auth
+AWS_REGION=                  # e.g. ap-south-1
+BETTER_AUTH_SECRET=          # Random secret for session signing
 GOOGLE_GENERATIVE_AI_API_KEY=
 FIRECRAWL_API_KEY=
 APIFY_API_TOKEN=
-INNGEST_EVENT_KEY=          # From app.inngest.com (production only)
-INNGEST_SIGNING_KEY=        # From app.inngest.com (production only)
-NEXT_PUBLIC_APP_URL=        # e.g. https://reachy-outreach.vercel.app
+INNGEST_EVENT_KEY=           # From app.inngest.com (production only)
+INNGEST_SIGNING_KEY=         # From app.inngest.com (production only)
+NEXT_PUBLIC_APP_URL=         # e.g. https://reachy-outreach.vercel.app
 ```
