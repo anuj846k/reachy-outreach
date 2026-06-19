@@ -20,3 +20,10 @@ export const requireUnauth = async () => {
     redirect('/');
   }
 };
+
+export const getUser = async () => {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  return session?.user ?? null;
+};

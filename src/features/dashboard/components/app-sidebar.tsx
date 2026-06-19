@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LogOut, ChevronsUpDown, Sparkles } from 'lucide-react';
+import { LogOut, ChevronsUpDown } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,

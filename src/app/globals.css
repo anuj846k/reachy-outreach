@@ -152,6 +152,18 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  --color-brand-50: #E8F1FF;
+  --color-brand-100: #D5E5FF;
+  --color-brand-200: #A8C8FF;
+  --color-brand-300: #7AA8FF;
+  --color-brand-400: #568CFF;
+  --color-brand-500: #3461FF;
+  --color-brand-600: #1A4FFF;
+  --color-brand-700: #0033E6;
+  --color-brand-800: #0029B8;
+  --color-brand-900: #001F8A;
+  --color-brand-950: #00145C;
+
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);
