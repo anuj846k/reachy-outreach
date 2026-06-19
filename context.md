@@ -76,15 +76,15 @@ Simple dashboard showing:
 
 ## Real Example
 **User**: Ayush
-**Offering**: Kakiyo (kakiyo.com - app scrapes and saves)
-**Prompt**: Conversational tone, under 100 words, lead with relevant observation about prospect before mentioning Kakiyo, never salesy, end with soft question
+**Offering**: Reachy (example - app scrapes and saves)
+**Prompt**: Conversational tone, under 100 words, lead with relevant observation about prospect before mentioning Reachy, never salesy, end with soft question
 **Prospect**: Sarah
 - GitHub profile
 - Portfolio URL
 - Company website
 - LinkedIn screenshot
 **App understands**: Sarah is sales engineer at B2B SaaS, technical background, recently posted about outreach volume struggles, company sells to mid-market teams
-**Generated Message**: "Hey Sarah, saw your post about the outreach volume problem last week. Funny timing, I have been building something that a few sales engineers have been using to handle exactly that. Kakiyo runs the full LinkedIn conversation for you, qualification and all. Worth a quick look?"
+**Generated Message**: "Hey Sarah, saw your post about the outreach volume problem last week. Funny timing, I have been building something that a few sales engineers have been using to handle exactly that. Reachy runs the full LinkedIn conversation for you, qualification and all. Worth a quick look?"
 **Sarah replies**: "Interesting, how does it actually work? Does it need access to my LinkedIn account?"
 **App generates**: Natural follow-up addressing her question directly, same tone, keeps conversation moving
 

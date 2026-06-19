@@ -1,6 +1,6 @@
-# Kakiyo — AI-Powered Outreach Platform
+# Reachy — AI-Powered Outreach Platform
 
-Kakiyo(reachyy) is a full-stack AI outreach tool. You paste a LinkedIn URL or any public profile, it extracts a structured prospect profile in the background, and generates a personalized outreach message. It also handles conversation follow-ups with full context memory.
+Reachy is a full-stack AI outreach tool. You paste a LinkedIn URL or any public profile, it extracts a structured prospect profile in the background, and generates a personalized outreach message. It also handles conversation follow-ups with full context memory.
 
 ---
 
@@ -10,7 +10,7 @@ Kakiyo(reachyy) is a full-stack AI outreach tool. You paste a LinkedIn URL or an
 
 **Offering (input):**
 ```
-Name: Kakiyo
+Name: Reachy
 Summary: AI tool that extracts prospect profiles from URLs and generates personalized outreach messages
 ICP: B2B SaaS founders and sales engineers doing manual LinkedIn outreach at scale
 Key differentiators: Multi-source scraping (LinkedIn + any URL), Gemini-powered consolidation, conversation memory for follow-ups
@@ -40,7 +40,7 @@ Hey Sarah, your post about SDR teams sending 200 emails a day to get
 3 replies hit close to home. That math doesn't work, and it usually
 means the messages aren't actually tailored — they just look like they are.
 
-Kakiyo does the research automatically. It reads a LinkedIn profile (or any
+Reachy does the research automatically. It reads a LinkedIn profile (or any
 URL) and writes a message that actually references what that specific person
 does and cares about. Not merge tags — actual context.
 
@@ -314,5 +314,5 @@ FIRECRAWL_API_KEY=
 APIFY_API_TOKEN=
 INNGEST_EVENT_KEY=          # From app.inngest.com (production only)
 INNGEST_SIGNING_KEY=        # From app.inngest.com (production only)
-NEXT_PUBLIC_APP_URL=        # e.g. https://kakiyo-outreach.vercel.app
+NEXT_PUBLIC_APP_URL=        # e.g. https://reachy-outreach.vercel.app
 ```
