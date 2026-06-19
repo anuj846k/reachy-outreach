@@ -18,6 +18,10 @@ const signer = new Signer({
   port: 5432,
   username: 'postgres',
   region,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
 });
 
 const sql = postgres({
