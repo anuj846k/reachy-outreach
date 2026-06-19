@@ -5,7 +5,7 @@ import postgres from 'postgres';
 import { drizzle as drizzlePg } from 'drizzle-orm/postgres-js';
 import * as schema from './schema';
 
-config({ path: '.env.local' });
+config({ path: '.env' });
 
 const endpoint = process.env.AURORA_ENDPOINT;
 const region = process.env.AWS_REGION ?? 'ap-south-1';
