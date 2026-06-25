@@ -111,7 +111,7 @@ Simple dashboard showing:
 ## Current Project State
 - Next.js 16.2.6 with App Router
 - Better Auth configured
-- Drizzle ORM with Postgres (Neon)
+- Drizzle ORM with Postgres (AWS Aurora)
 - Inngest set up for background jobs
 - AI SDK Google configured (Gemini 2.5 Flash)
 - Test button working on homepage (calls Server Action → Inngest → Gemini)
